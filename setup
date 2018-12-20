@@ -1,0 +1,78 @@
+#!/bin/bash
+
+sudo yum -y install git jq python2-pip python2 python2-boto3 groovy
+sudo pip install bcrypt
+# curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
+# sudo unzip terraform_0.11.10_linux_amd64.zip -d /usr/bin
+sudo yum -y install java-1.8.0
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+sudo rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
+# sudo yum -y install https://pkg.jenkins.io/redhat/jenkins-2.146-1.1.noarch.rpm
+sudo yum -y install jenkins
+sudo service jenkins start
+
+until sudo ls /var/lib/jenkins | grep users >/dev/null 2>&1
+do
+	echo -n "."
+	sleep 2
+done
+
+until sudo ls /var/lib/jenkins/users | grep admin >/dev/null 2>&1
+do
+	echo -n "."
+	sleep 2
+done
+echo "jenkins started"
+
+admin=$(ls /var/lib/jenkins/users/ | grep admin)
+
+echo "Stop Jenkins to add admin user"
+sudo service jenkins stop
+
+#this creates a new hash and stores it as variable newhash
+newhash=$(python hash.py)
+echo $newhash
+
+#this find the old hash and stores it as variable oldhash
+oldhash=$(sudo grep "jbcrypt" /var/lib/jenkins/users/$admin/config.xml | cut -d ":" -f2 | xargs | cut -d "<" -f1)
+echo $oldhash
+
+export newhash oldhash
+
+#this replaces the oldhash with my new one
+sudo sed -i "s/$(echo $oldhash | sed -e 's/\\/\\\\/g; s/\//\\\//g; s/&/\\\&/g')/$(echo $newhash | sed -e 's/\\/\\\\/g; s/\//\\\//g; s/&/\\\&/g')/g" /var/lib/jenkins/users/$admin/config.xml
+
+sudo service jenkins start
+echo "jenkins started"
+
+until curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:hello123" | grep "Jenkins-Crumb" >/dev/null 2>&1
+do
+	echo -n "."
+	sleep 2
+done
+
+CRUMB=$(curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:hello123")
+
+curl -sX POST http://localhost:8080/pluginManager/installPlugins -u admin:hello123 -H "$CRUMB" -H "Accept-Encoding: gzip, deflate" -H "Content-Type: application/json" -H "X-Requested-With: XMLHttpRequest" --data "@installPlugins.json"
+
+until curl -s -k "http://localhost:8080/pluginManager/api/json?depth=1" --user "admin:hello123" | jq '.plugins[]|{shortName}' -c | grep email-ext >/dev/null 2>&1
+do
+	echo -n "."
+	sleep 2
+done
+echo "plugins installed"
+
+curl --user 'admin:hello123' -H "$CRUMB" --data-urlencode "script=$(< ./jenkins.groovy)" http://localhost:8080/scriptText
+echo "fixed a defect in startup"
+
+curl --user 'admin:hello123' -H "$CRUMB" --data-urlencode "script=$(< ./root.groovy)" http://localhost:8080/scriptText
+echo "added root url and email"
+
+sudo service jenkins restart
+echo "restarting jenkins"
+
+until curl -I -s "http://localhost:8080/" --user "admin:hello123" | grep "200 OK"
+do
+	echo -n "."
+	sleep 2
+done
