@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo -n "create admin password: " && read password
+export password
+
 sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo yum -y install git jq python-pip python python-boto3 groovy
 sudo pip install bcrypt
@@ -28,7 +31,7 @@ echo "Stop Jenkins to add admin user"
 sudo service jenkins stop
 
 #this creates a new hash and stores it as variable newhash
-newhash=$(python hash.py)
+newhash=$(python hash.py $password)
 echo $newhash
 
 #this find the old hash and stores it as variable oldhash
@@ -43,33 +46,33 @@ sudo sed -i "s/$(echo $oldhash | sed -e 's/\\/\\\\/g; s/\//\\\//g; s/&/\\\&/g')/
 sudo service jenkins start
 echo "jenkins started"
 
-until curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:hello123" | grep "Jenkins-Crumb" >/dev/null 2>&1
+until curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:$password" | grep "Jenkins-Crumb" >/dev/null 2>&1
 do
 	echo -n "."
 	sleep 2
 done
 
-CRUMB=$(curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:hello123")
+CRUMB=$(curl -s "http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)" --user "admin:$password")
 
-curl -sX POST http://localhost:8080/pluginManager/installPlugins -u admin:hello123 -H "$CRUMB" -H "Accept-Encoding: gzip, deflate" -H "Content-Type: application/json" -H "X-Requested-With: XMLHttpRequest" --data "@installPlugins.json"
+curl -sX POST http://localhost:8080/pluginManager/installPlugins -u admin:$password -H "$CRUMB" -H "Accept-Encoding: gzip, deflate" -H "Content-Type: application/json" -H "X-Requested-With: XMLHttpRequest" --data "@installPlugins.json"
 
-until curl -s -k "http://localhost:8080/pluginManager/api/json?depth=1" --user "admin:hello123" | jq '.plugins[]|{shortName}' -c | grep email-ext >/dev/null 2>&1
+until curl -s -k "http://localhost:8080/pluginManager/api/json?depth=1" --user "admin:$password" | jq '.plugins[]|{shortName}' -c | grep email-ext >/dev/null 2>&1
 do
 	echo -n "."
 	sleep 2
 done
 echo "plugins installed"
 
-curl --user 'admin:hello123' -H "$CRUMB" --data-urlencode "script=$(< ./jenkins.groovy)" http://localhost:8080/scriptText
+curl --user "admin:$password" -H "$CRUMB" --data-urlencode "script=$(< ./jenkins.groovy)" http://localhost:8080/scriptText
 echo "fixed a defect in startup"
 
-curl --user 'admin:hello123' -H "$CRUMB" --data-urlencode "script=$(< ./root.groovy)" http://localhost:8080/scriptText
+curl --user "admin:$password" -H "$CRUMB" --data-urlencode "script=$(< ./root.groovy)" http://localhost:8080/scriptText
 echo "added root url and email"
 
 sudo service jenkins restart
 echo "restarting jenkins"
 
-until curl -I -s "http://localhost:8080/" --user "admin:hello123" | grep "200 OK"
+until curl -I -s "http://localhost:8080/" --user "admin:$password" | grep "200 OK"
 do
 	echo -n "."
 	sleep 2
