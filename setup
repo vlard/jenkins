@@ -1,13 +1,11 @@
 #!/bin/bash
 
-sudo yum -y install git jq python2-pip python2 python2-boto3 groovy
+sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+sudo yum -y install git jq python-pip python python-boto3 groovy
 sudo pip install bcrypt
-# curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
-# sudo unzip terraform_0.11.10_linux_amd64.zip -d /usr/bin
 sudo yum -y install java-1.8.0
 sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
 sudo rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
-# sudo yum -y install https://pkg.jenkins.io/redhat/jenkins-2.146-1.1.noarch.rpm
 sudo yum -y install jenkins
 sudo service jenkins start
 
