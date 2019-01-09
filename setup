@@ -77,3 +77,10 @@ do
 	echo -n "."
 	sleep 2
 done
+echo "jenkins is up"
+
+curl -s -XPOST "http://localhost:8080/createItem?name=load" -u admin:$password --data-binary "@load.xml" -H "Content-Type:text/xml" -H "$CRUMB"
+
+# this opens port 80 and 8080 in case the machine is configured to have it closed
+sudo firewall-cmd --zone=public --add-port=8080/tcp
+sudo firewall-cmd --zone=public --add-port=80/tcp
