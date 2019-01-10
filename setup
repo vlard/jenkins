@@ -89,5 +89,4 @@ echo "jenkins is up"
 
 curl -s -XPOST "http://localhost:8080/createItem?name=load" -u admin:$password --data-binary "@load.xml" -H "Content-Type:text/xml" -H "$CRUMB"
 
-echo "password=$password" >> .bash_profile
-echo "export password" >> .bash_profile
+echo "password=$password" >> .credentials
