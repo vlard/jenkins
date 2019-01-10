@@ -1,10 +1,10 @@
 #!/bin/bash
 
+# so far only tested on amazlon linux 2 and red hat 7
 # this opens port 80 and 8080 in case the machine is configured to have it closed
 sudo firewall-cmd --zone=public --add-port=8080/tcp
 sudo firewall-cmd --zone=public --add-port=80/tcp
 
-# uncomment these 2 lines if you do not have a password variable already exported
 if [[ "$password" == "" ]]
 then
   echo -n "create admin password: " && read password
