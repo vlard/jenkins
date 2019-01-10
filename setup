@@ -4,8 +4,8 @@
 sudo firewall-cmd --zone=public --add-port=8080/tcp
 sudo firewall-cmd --zone=public --add-port=80/tcp
 
-echo -n "create admin password: " && read password
-export password
+#echo -n "create admin password: " && read password
+#export password
 
 sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo yum -y install git jq python-pip python python-boto3 groovy
