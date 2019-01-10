@@ -87,4 +87,4 @@ do
 done
 echo "jenkins is up"
 
-#curl -s -XPOST "http://localhost:8080/createItem?name=load" -u admin:$password --data-binary "@load.xml" -H "Content-Type:text/xml" -H "$CRUMB"
+curl -s -XPOST "http://localhost:8080/createItem?name=load" -u admin:$password --data-binary "@load.xml" -H "Content-Type:text/xml" -H "$CRUMB"
