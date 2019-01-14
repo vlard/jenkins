@@ -35,7 +35,9 @@ declare -a array=($(ls))
 for i in &quot;${array[@]}&quot;
 do
   cp -r $i /var/lib/jenkins/jobs/$i
-done</command>
+done
+
+sudo service jenkins restart</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
